@@ -1,0 +1,106 @@
+From ac71fa650765694b6aabd21ef0f8295060c91101 Mon Sep 17 00:00:00 2001
+From: Hamilton de Oliveira Pacheco <hamilton.pacheco@nexadigital.com.br>
+Date: Mon, 4 Nov 2019 22:47:53 -0300
+Subject: [PATCH] Hamilton Pacheco
+
+---
+ README.md           | 23 +++++++++++++++++++++++
+ create_database.sql |  7 -------
+ hello-node/app.js   |  6 ++++--
+ hello-python/app.py |  2 ++
+ 4 files changed, 29 insertions(+), 9 deletions(-)
+ delete mode 100644 create_database.sql
+
+diff --git a/README.md b/README.md
+index e723eca..8569532 100644
+--- a/README.md
++++ b/README.md
+@@ -69,3 +69,26 @@ Please do **not** fork this repository and do **not** publish your solution onli
+ ## Contact
+ 
+ Feel free to reach out if you have any questions! Also, we expect this problem to take some hours at most, but please do get in touch if you need more time to provide a good solution! It is far better than delivering something that does not work :)
++
++
++## Procedure to use Solution
++
++Pre-Requirements to rum the project
++Docker 
++Docker Compose
++mysql-client
++
++1. git clone reponame
++
++2. docker-compose up -d
++
++3. Access python application http://localhost:8000 for insert message on RabbitMQ queue
++
++3. Acesss RabitMQ console to view message statistics using http://localhost:15672 for acess use the username and password guest
++
++4. For view mysql data use the mysql-client and run 
++
++mysql -u admin -h localhost -p --protocol=tcp
++
++use database hello;
++select * from Messages ;
+\ No newline at end of file
+diff --git a/create_database.sql b/create_database.sql
+deleted file mode 100644
+index f9cdf18..0000000
+--- a/create_database.sql
++++ /dev/null
+@@ -1,7 +0,0 @@
+-CREATE DATABASE IF NOT EXISTS hello;
+-USE hello;
+-CREATE TABLE Messages (
+-    ID int NOT NULL AUTO_INCREMENT,
+-    message VARCHAR(255),
+-    PRIMARY KEY (ID)
+-);
+diff --git a/hello-node/app.js b/hello-node/app.js
+index 0f12b22..3e91de8 100644
+--- a/hello-node/app.js
++++ b/hello-node/app.js
+@@ -19,7 +19,8 @@ console.log(
+   RABBITMQ_PORT
+ );
+ 
+-var url = "amqp://" + RABBITMQ_HOST + RABBITMQ_PORT;
++
++var url = "amqp://@" + RABBITMQ_HOST;
+ amqp.connect(url, function(err, conn) {
+   console.log("Connected to RabbitMQ at %s", url);
+ 
+@@ -34,7 +35,7 @@ amqp.connect(url, function(err, conn) {
+         console.log("Received message: %s", msg);
+ 
+         db.query(
+-          "INSERT INTO table SET ?",
++          "INSERT INTO Messages SET ?",
+           { message: msg.content.toString() },
+           function(err, result) {
+             if (err) throw err;
+@@ -46,3 +47,4 @@ amqp.connect(url, function(err, conn) {
+     { noAck: true }
+   );
+ });
++
+diff --git a/hello-python/app.py b/hello-python/app.py
+index 8ffa61b..702eb66 100644
+--- a/hello-python/app.py
++++ b/hello-python/app.py
+@@ -21,6 +21,7 @@ html = """
+ def index():
+     if request.method == 'POST':
+         app.logger.info(request.form.get("flavour"))
++        enqueue(request.form.get("flavour"))
+     return html
+ 
+ 
+@@ -43,3 +44,4 @@ def enqueue(value):
+ 
+ if __name__ == "__main__":
+     app.run(debug=True, host="0.0.0.0", port=8000)
++
+-- 
+2.21.0
+

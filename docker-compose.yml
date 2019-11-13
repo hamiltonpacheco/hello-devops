@@ -1,0 +1,71 @@
+version: '3'
+services:
+  rabbitmq:
+    image: rabbitmq:3.6.5-management
+    container_name: "rabbitmq"
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "HJKLSDFGHJKLMBZSFXFZD"
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+      RABBITMQ_DEFAULT_VHOST: "/"
+    ports:
+        - "15672:15672"
+        - "5672:5672"
+    labels:
+      NAME: "rabbitmq"
+    networks: 
+      - overlay
+    restart: always
+    # volumes:
+    #   - "./rabbitmq/rabbitmq.config:/etc/rabbitmq/rabbitmq.config:rw"
+    #   - "./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:rw"
+
+  python:
+    build: hello-python/.
+    container_name: python-app
+    environment:
+    - RABBITMQ_HOST=rabbitmq
+    - RABBITMQ_PORT=5672
+    - RABBITMQ_QUEUE=hello
+    ports:
+      - 8000:8000
+    networks: 
+      - overlay
+  mysql:
+    image: mariadb:10.3
+    container_name: mariadb
+    volumes:
+      - container-volume:/var/lib/mysql
+      - ./mysql/create_database.sql:/docker-entrypoint-initdb.d/dump.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    ports:
+      - "3306:3306"
+    networks: 
+      - overlay
+  node:
+    build: hello-node/.
+    container_name: node-app
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_QUEUE=hello
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=admin
+      - MYSQL_DB=hello  
+    links:
+      - rabbitmq
+      - mysql
+    ports:
+      - 3000:80
+    networks:
+      - overlay
+    restart: always
+networks:
+  overlay:
+
+volumes:
+  container-volume:
